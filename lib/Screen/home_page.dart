@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter_sms/flutter_sms.dart';
 import './friend_list.dart';
 import './start_page.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,8 +12,32 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  
+  TextEditingController _controllerPeople, _controllerMessage;
+  String _message, body;
+  String _canSendSMSMessage = "Check is not run.";
+  List<String> people = [];
+
   @override
+  void initState() {
+    super.initState();
+  }
+
+  void _sendSMS(List<String> recipents) async {
+    try {
+      String _result = await sendSMS(
+          message: _controllerMessage.text, recipients: recipents);
+      setState(() => _message = _result);
+    } catch (error) {
+      setState(() => _message = error.toString());
+    }
+  }
+
+  void _canSendSMS() async {
+    bool _result = await canSendSMS();
+    setState(() => _canSendSMSMessage =
+        _result ? 'This unit can send SMS' : 'This unit cannot send SMS');
+  }
+
   String _locationMessage = "";
   void _getCurrentLocation() async {
     final position = await Geolocator()
@@ -55,6 +81,7 @@ class _HomeState extends State<Home> {
                 onPressed: () {
                   _getCurrentLocation();
                   _ackAlert(context);
+                  _send();
                 },
                 child: new Icon(
                   Icons.warning,
@@ -100,6 +127,14 @@ class _HomeState extends State<Home> {
             ],
           ),
         ));
+  }
+
+  void _send() {
+    if (people == null || people.isEmpty) {
+      setState(() => _message = "At Least 1 Person or Message Required");
+    } else {
+      _sendSMS(people);
+    }
   }
 }
 
